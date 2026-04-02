@@ -14,7 +14,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import StandardScaler
+
 from src.models.save_model import save_artifacts
+from src.features.feature_config import FEATURE_COLUMNS
+from src.models.anomaly_model import train_anomaly_model
+
+
 
 def main():
     print("\n[1] Loading dataset...")
@@ -32,10 +37,14 @@ def main():
     print("[5] Splitting features and labels...")
     X, y = split_features_labels(df)
 
-    print("[6] Encoding labels...")
+    # 🚨 CRITICAL FIX — FEATURE ALIGNMENT
+    print("[6] Selecting core features (FIXING TRAINING-SERVING SKEW)...")
+    X = X[FEATURE_COLUMNS]
+
+    print("[7] Encoding labels...")
     y_encoded, encoder = encode_labels(y)
 
-    print("[7] Train/Test split...")
+    print("[8] Train/Test split...")
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y_encoded,
@@ -44,14 +53,13 @@ def main():
         stratify=y_encoded
     )
 
-    print("[8] Scaling features (NO DATA LEAKAGE)...")
+    print("[9] Scaling features (NO DATA LEAKAGE)...")
     scaler = StandardScaler()
 
-    # IMPORTANT: Keep X_train/X_test as DataFrames until mapping
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    print("[9] Training model with custom class weights...")
+    print("[10] Training model with class balancing...")
     class_weight = {
         0: 1,   # Benign
         1: 5,   # Bot
@@ -70,17 +78,28 @@ def main():
     )
 
     model.fit(X_train_scaled, y_train)
+
+    # 🔥 TRAIN ANOMALY MODEL
+    from src.models.anomaly_model import train_anomaly_model
+
+    print("[X] Training anomaly model (normal traffic only)...")
+
+    # Use ONLY benign samples
+    X_benign = X_train_scaled[y_train == 0]
+
+    train_anomaly_model(X_benign)
+
+    # 🔥 SAVE MODEL
     save_artifacts(model, scaler, encoder)
 
-    print("[10] Evaluating model...")
+    print("[11] Evaluating model...")
     y_pred = model.predict(X_test_scaled)
 
     print("\n=== Classification Report ===\n")
     print(classification_report(y_test, y_pred, target_names=encoder.classes_))
 
-    print("\n[11] Generating attack insights...")
-    
-    # Use original (unscaled) X_test with indices preserved
+    print("\n[12] Generating attack insights...")
+
     attack_insights = map_attack_context(X_test, y_pred, encoder)
 
     print("\n=== Sample Attack Insights ===\n")

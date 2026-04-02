@@ -1,0 +1,18 @@
+{"prediction": "Benign", "port": 54522, "packets": 11, "syn": 2, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:14.900684"}
+{"prediction": "Benign", "port": 54522, "packets": 7, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:16.154334"}
+{"prediction": "Benign", "port": 54522, "packets": 10, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:17.260281"}
+{"prediction": "Benign", "port": 54522, "packets": 6, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:18.566690"}
+{"prediction": "Benign", "port": 54522, "packets": 7, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:19.647292"}
+{"prediction": "Benign", "port": 54522, "packets": 11, "syn": 0, "anomaly": false, "src_ip": "172.16.147.187", "timestamp": "2026-04-02T16:25:20.434902"}
+{"prediction": "Benign", "port": 54522, "packets": 10, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:25:21.598466"}
+{"prediction": "Benign", "port": 41220, "packets": 11, "syn": 2, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:27:49.755389"}
+{"prediction": "Benign", "port": 443, "packets": 9, "syn": 2, "anomaly": false, "src_ip": "34.120.208.123", "timestamp": "2026-04-02T16:27:58.105940"}
+{"prediction": "Benign", "port": 48276, "packets": 9, "syn": 2, "anomaly": false, "src_ip": "172.16.147.187", "timestamp": "2026-04-02T16:28:00.149955"}
+{"prediction": "Benign", "port": 48276, "packets": 5, "syn": 0, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:28:10.262020"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 9, "pps": 52, "anomaly": false, "src_ip": "172.16.147.187", "timestamp": "2026-04-02T16:55:20.298017"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 1, "pps": 3, "anomaly": false, "src_ip": "172.16.147.187", "timestamp": "2026-04-02T16:55:28.371384"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 12, "pps": 39, "anomaly": false, "src_ip": "172.16.147.187", "timestamp": "2026-04-02T16:55:29.369460"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 12, "pps": 11, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:55:30.791760"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 12, "pps": 10, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:55:32.311500"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 14, "pps": 50, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:55:33.356560"}
+{"attack": "Benign", "service": "Unknown", "layer": "L4 (Transport)", "port": 53562, "packets": 5, "pps": 3, "anomaly": false, "src_ip": "1.1.1.1", "timestamp": "2026-04-02T16:55:43.694589"}

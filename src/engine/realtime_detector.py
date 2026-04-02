@@ -1,83 +1,62 @@
 import pandas as pd
-import numpy as np
 from src.models.save_model import load_artifacts
+from src.features.feature_config import FEATURE_COLUMNS
+from src.models.anomaly_model import load_anomaly_model
 
 
 class RealTimeDetector:
     def __init__(self):
         print("[*] Loading model artifacts...")
-
         self.model, self.scaler, self.encoder = load_artifacts()
-
+        self.anomaly_model = load_anomaly_model()
         print("[✓] Model loaded successfully")
-
-    def preprocess_input(self, data: dict) -> pd.DataFrame:
-        """
-        Convert incoming data into DataFrame and match training format.
-        """
-
-        df = pd.DataFrame([data])
-
-        # Ensure correct column order (VERY IMPORTANT)
-        df = df[self.get_feature_order()]
-
-        return df
 
     def get_feature_order(self):
         """
-        Define feature order used during training.
-        MUST match training dataset exactly.
+        Exact feature order used during training (CICIDS format).
+        """
+        return FEATURE_COLUMNS
+
+    def preprocess_input(self, data: dict) -> pd.DataFrame:
+        """
+        Convert incoming partial feature dict into full feature vector.
+        Missing features are safely filled with 0.
         """
 
-        return [
-            'Destination Port', 'Flow Duration', 'Total Fwd Packets',
-            'Total Backward Packets', 'Total Length of Fwd Packets',
-            'Total Length of Bwd Packets', 'Fwd Packet Length Max',
-            'Fwd Packet Length Min', 'Fwd Packet Length Mean',
-            'Fwd Packet Length Std', 'Bwd Packet Length Max',
-            'Bwd Packet Length Min', 'Bwd Packet Length Mean',
-            'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s',
-            'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min',
-            'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max',
-            'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std',
-            'Bwd IAT Max', 'Bwd IAT Min', 'Fwd PSH Flags', 'Bwd PSH Flags',
-            'Fwd URG Flags', 'Bwd URG Flags', 'Fwd Header Length',
-            'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s',
-            'Min Packet Length', 'Max Packet Length', 'Packet Length Mean',
-            'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count',
-            'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count',
-            'ACK Flag Count', 'URG Flag Count', 'CWE Flag Count',
-            'ECE Flag Count', 'Down/Up Ratio', 'Average Packet Size',
-            'Avg Fwd Segment Size', 'Avg Bwd Segment Size',
-            'Fwd Header Length.1', 'Fwd Avg Bytes/Bulk',
-            'Fwd Avg Packets/Bulk', 'Fwd Avg Bulk Rate',
-            'Bwd Avg Bytes/Bulk', 'Bwd Avg Packets/Bulk',
-            'Bwd Avg Bulk Rate', 'Subflow Fwd Packets',
-            'Subflow Fwd Bytes', 'Subflow Bwd Packets',
-            'Subflow Bwd Bytes', 'Init_Win_bytes_forward',
-            'Init_Win_bytes_backward', 'act_data_pkt_fwd',
-            'min_seg_size_forward', 'Active Mean', 'Active Std',
-            'Active Max', 'Active Min', 'Idle Mean', 'Idle Std',
-            'Idle Max', 'Idle Min'
-        ]
+        df = pd.DataFrame([data])
+        expected_features = self.get_feature_order()
 
-    def predict(self, data: dict):
-        """
-        Predict attack type from incoming flow data.
-        """
+        # Add missing features
+        for col in expected_features:
+            if col not in df.columns:
+                df[col] = 0
 
-        # Preprocess input
-        df = self.preprocess_input(data)
+        # Ensure correct order
+        df = df[expected_features]
 
-        # Scale
+        return df
+
+    def predict(self, data):
+        import pandas as pd
+
+        # Convert input to DataFrame
+        df = pd.DataFrame([data])
+
+        # Ensure correct feature order
+        df = df[self.get_feature_order()]
+
+        # Scale features
         X_scaled = self.scaler.transform(df)
 
-        # Predict
+        # 🔥 ML prediction
         pred = self.model.predict(X_scaled)
-
-        # Decode label
         label = self.encoder.inverse_transform(pred)[0]
 
+        # 🔥 ANOMALY prediction (FIXED)
+        score = self.anomaly_model.decision_function(X_scaled)[0]
+        is_anomaly = score < -0.1
+        
         return {
-            "prediction": label
+            "prediction": label,
+            "anomaly": is_anomaly
         }
