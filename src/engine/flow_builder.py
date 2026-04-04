@@ -3,12 +3,49 @@ import time
 import numpy as np
 
 
+# 🔥 Proper port → service mapping
+COMMON_PORTS = {
+    80: "HTTP",
+    443: "HTTPS",
+    53: "DNS",
+    22: "SSH",
+    21: "FTP",
+    25: "SMTP",
+    110: "POP3",
+    143: "IMAP",
+    8080: "HTTP",
+    8443: "HTTPS",
+    3306: "MySQL",
+}
+
+
+def map_service(port):
+    if port in COMMON_PORTS:
+        return COMMON_PORTS[port]
+
+    # 🔥 Ephemeral ports (client-side)
+    if port >= 49152:
+        return "Ephemeral"
+
+    return "Other"
+
+
+def map_layer(service, proto):
+    # 🔥 Layer classification (this makes your UI look pro)
+    if service in ["HTTP", "HTTPS", "DNS", "SMTP", "FTP"]:
+        return "Application"
+
+    if proto in ["TCP", "UDP"]:
+        return "Transport"
+
+    return "Network"
+
 
 class Flow:
     def __init__(self):
         self.start_time = time.time()
 
-        # 🔥 Separate tracking
+        # Directional tracking
         self.fwd_packet_times = []
         self.bwd_packet_times = []
 
@@ -36,7 +73,7 @@ class Flow:
             self.bwd_packet_lengths.append(packet_len)
             self.bwd_packets += 1
 
-        # TCP flags
+        # TCP flags tracking
         if flags is not None:
             if flags & 0x02:
                 self.syn_count += 1
@@ -66,14 +103,21 @@ class Flow:
 
         duration = max((time.time() - self.start_time), 1e-6)
 
+        # 🔥 NEW: service + layer mapping
+        service = map_service(dst_port)
+        layer = map_layer(service, proto)
+
         return {
             "Destination Port": dst_port,
+            "Service": service,
+            "Layer": layer,
+            "Protocol": proto,
+
             "Flow Duration": int(duration * 1e6),
 
             "Total Fwd Packets": self.fwd_packets,
             "Total Backward Packets": self.bwd_packets,
 
-            # 🔥 REAL BYTE TRACKING
             "Total Length of Fwd Packets": fwd_lengths.sum() if len(fwd_lengths) else 0,
             "Total Length of Bwd Packets": bwd_lengths.sum() if len(bwd_lengths) else 0,
 
@@ -83,14 +127,14 @@ class Flow:
             "Fwd Packet Length Mean": fwd_lengths.mean() if len(fwd_lengths) else 0,
             "Fwd Packet Length Std": fwd_lengths.std() if len(fwd_lengths) else 0,
 
-            # 🔥 NEW: backward stats (important)
+            # Backward stats
             "Bwd Packet Length Max": bwd_lengths.max() if len(bwd_lengths) else 0,
             "Bwd Packet Length Min": bwd_lengths.min() if len(bwd_lengths) else 0,
             "Bwd Packet Length Mean": bwd_lengths.mean() if len(bwd_lengths) else 0,
             "Bwd Packet Length Std": bwd_lengths.std() if len(bwd_lengths) else 0,
 
             "Flow Bytes/s": (fwd_lengths.sum() + bwd_lengths.sum()) / duration,
-            "Flow Packets/s": (self.total_packets()) / duration,
+            "Flow Packets/s": self.total_packets() / duration,
 
             "Flow IAT Mean": np.mean(iat) if len(iat) else 0,
             "Flow IAT Std": np.std(iat) if len(iat) else 0,
@@ -104,8 +148,9 @@ class Flow:
             "FIN Flag Count": self.fin_count,
         }
 
+
 class FlowBuilder:
-    def __init__(self, timeout=1):  # 🔥 faster response
+    def __init__(self, timeout=1):
         self.flows = defaultdict(Flow)
         self.timeout = timeout
 
@@ -148,17 +193,15 @@ class FlowBuilder:
         src_ip = packet[IP].src
         flow = self.flows[key]
 
-        # Direction
         direction = "fwd" if src_ip == key[0] else "bwd"
 
-        # Extract TCP flags
         flags = None
         if packet.haslayer(TCP):
             flags = packet[TCP].flags
 
         flow.update(len(packet), direction, flags)
 
-        # Emit flow
+        # 🔥 Emit flow
         if (
             time.time() - flow.start_time > self.timeout
             or flow.total_packets() > 20
